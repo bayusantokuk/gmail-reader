@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family: sans-serif;">
+    <h2>Your Gmail Inbox</h2>
+    <pre id="output">Loading...</pre>
+
+    <script>
+        const token = new URLSearchParams(window.location.search).get("token");
+
+        async function load() {
+            const res = await fetch(`/api/emails?token=${token}`);
+            const data = await res.json();
+            document.getElementById("output").innerText = JSON.stringify(data, null, 2);
+        }
+
+        load();
+    </script>
+</body>
+</html>
