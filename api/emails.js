@@ -1,17 +1,34 @@
 import { google } from "googleapis";
 
 export default async function handler(req, res) {
-  const token = req.query.token;
-
-  const auth = new google.auth.OAuth2();
-  auth.setCredentials({ access_token: token });
-
+  const auth = req.auth; // token OAuth dari callback
   const gmail = google.gmail({ version: "v1", auth });
 
-  const list = await gmail.users.messages.list({
+  // Ambil list email
+  const listRes = await gmail.users.messages.list({
     userId: "me",
-    maxResults: 10
+    maxResults: 10,
   });
 
-  res.json(list.data);
+  const messages = listRes.data.messages || [];
+
+  // Ambil detail tiap email
+  const detailedMessages = await Promise.all(
+    messages.map(async (msg) => {
+      const message = await gmail.users.messages.get({
+        userId: "me",
+        id: msg.id,
+        format: "full",
+      });
+
+      const headers = message.data.payload.headers;
+      const from = headers.find((h) => h.name === "From")?.value;
+      const subject = headers.find((h) => h.name === "Subject")?.value;
+      const snippet = message.data.snippet;
+
+      return { id: msg.id, from, subject, snippet };
+    })
+  );
+
+  res.status(200).json({ emails: detailedMessages });
 }
