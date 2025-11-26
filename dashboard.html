@@ -1,19 +1,40 @@
 <!DOCTYPE html>
 <html>
-<body style="font-family: sans-serif;">
-    <h2>Your Gmail Inbox</h2>
-    <pre id="output">Loading...</pre>
+<head>
+  <title>Your Gmail Inbox</title>
+</head>
+<body>
+  <h1>Your Gmail Inbox</h1>
+  <div id="email-list">Loading...</div>
 
-    <script>
-        const token = new URLSearchParams(window.location.search).get("token");
+  <script>
+    async function loadEmails() {
+      const container = document.getElementById('email-list');
+      try {
+        const res = await fetch('/api/emails');
+        const data = await res.json();
 
-        async function load() {
-            const res = await fetch(`/api/emails?token=${token}`);
-            const data = await res.json();
-            document.getElementById("output").innerText = JSON.stringify(data, null, 2);
+        if (!data.emails || data.emails.length === 0) {
+          container.innerHTML = "Inbox kosong";
+          return;
         }
 
-        load();
-    </script>
+        container.innerHTML = "";
+        data.emails.forEach(email => {
+          const div = document.createElement('div');
+          div.innerHTML = `<strong>From:</strong> ${email.from} <br>
+                           <strong>Subject:</strong> ${email.subject} <br>
+                           <em>${email.snippet}</em>
+                           <hr>`;
+          container.appendChild(div);
+        });
+      } catch (err) {
+        container.innerHTML = "Gagal memuat email";
+        console.error(err);
+      }
+    }
+
+    loadEmails();
+  </script>
 </body>
 </html>
